@@ -15,7 +15,7 @@ Panels:
         - /Path5
         - /Path6
       Splitter Ratio: 0.5
-    Tree Height: 555
+    Tree Height: 539
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -25,17 +25,18 @@ Panels:
       - /Publish Point1
       - /Goal  Selector1
     Name: Tool Properties
-    Splitter Ratio: 0.588679016
+    Splitter Ratio: 0.5886790156364441
   - Class: rviz/Views
     Expanded:
       - /Current View1
     Name: Views
     Splitter Ratio: 0.5
   - Class: rviz/Time
-    Experimental: false
     Name: Time
     SyncMode: 0
     SyncSource: ""
+Preferences:
+  PromptSaveOnExit: true
 Toolbars:
   toolButtonStyle: 2
 Visualization Manager:
@@ -47,7 +48,7 @@ Visualization Manager:
       Color: 160; 160; 164
       Enabled: true
       Line Style:
-        Line Width: 0.0299999993
+        Line Width: 0.029999999329447746
         Value: Lines
       Name: Grid
       Normal Cell Count: 0
@@ -59,7 +60,7 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
-    - Alpha: 0.699999988
+    - Alpha: 0.699999988079071
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
@@ -74,7 +75,8 @@ Visualization Manager:
       History Length: 1
       Name: VoronoiGraph
       Path Color: 50; 51; 204
-      Path Points Scale: 0.100000001
+      Path Points Scale: 0.10000000149011612
+      Queue Size: 10
       Topic: /segments
       Unreliable: false
       Value: true
@@ -84,13 +86,20 @@ Visualization Manager:
       Keep Alive (s): 5
       Keep Measurements: 5
       Name: MultiRobotInfo
+      Queue Size: 10
       Robots:
         robot_0: true
         robot_1: true
+        robot_10: true
+        robot_11: true
         robot_2: true
         robot_3: true
         robot_4: true
         robot_5: true
+        robot_6: true
+        robot_7: true
+        robot_8: true
+        robot_9: true
       Scale Pose: 1
       Topic: /robot_info
       Unreliable: false
@@ -99,6 +108,7 @@ Visualization Manager:
       Color Pose: 78; 154; 6
       Enabled: true
       Name: RobotGoalArray
+      Queue Size: 10
       Scale Pose: 1
       Topic: goals
       Unreliable: false
@@ -108,11 +118,11 @@ Visualization Manager:
       Class: rviz/Path
       Color: 255; 255; 0
       Enabled: true
-      Head Diameter: 0.300000012
-      Head Length: 0.200000003
-      Length: 0.300000012
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
       Line Style: Lines
-      Line Width: 0.0299999993
+      Line Width: 0.029999999329447746
       Name: Path
       Offset:
         X: 0
@@ -120,9 +130,10 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Radius: 0.0299999993
-      Shaft Diameter: 0.100000001
-      Shaft Length: 0.100000001
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
       Topic: /robot_0/path_unsynced
       Unreliable: false
       Value: true
@@ -131,11 +142,11 @@ Visualization Manager:
       Class: rviz/Path
       Color: 170; 255; 255
       Enabled: true
-      Head Diameter: 0.300000012
-      Head Length: 0.200000003
-      Length: 0.300000012
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
       Line Style: Lines
-      Line Width: 0.0299999993
+      Line Width: 0.029999999329447746
       Name: Path
       Offset:
         X: 0
@@ -143,9 +154,10 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Radius: 0.0299999993
-      Shaft Diameter: 0.100000001
-      Shaft Length: 0.100000001
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
       Topic: /robot_1/path_unsynced
       Unreliable: false
       Value: true
@@ -154,11 +166,11 @@ Visualization Manager:
       Class: rviz/Path
       Color: 85; 170; 255
       Enabled: true
-      Head Diameter: 0.300000012
-      Head Length: 0.200000003
-      Length: 0.300000012
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
       Line Style: Lines
-      Line Width: 0.0299999993
+      Line Width: 0.029999999329447746
       Name: Path
       Offset:
         X: 0
@@ -166,9 +178,10 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Radius: 0.0299999993
-      Shaft Diameter: 0.100000001
-      Shaft Length: 0.100000001
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
       Topic: /robot_2/path_unsynced
       Unreliable: false
       Value: true
@@ -177,11 +190,11 @@ Visualization Manager:
       Class: rviz/Path
       Color: 0; 170; 127
       Enabled: true
-      Head Diameter: 0.300000012
-      Head Length: 0.200000003
-      Length: 0.300000012
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
       Line Style: Lines
-      Line Width: 0.0299999993
+      Line Width: 0.029999999329447746
       Name: Path
       Offset:
         X: 0
@@ -189,9 +202,10 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Radius: 0.0299999993
-      Shaft Diameter: 0.100000001
-      Shaft Length: 0.100000001
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
       Topic: /robot_3/path_unsynced
       Unreliable: false
       Value: true
@@ -200,11 +214,11 @@ Visualization Manager:
       Class: rviz/Path
       Color: 255; 0; 0
       Enabled: true
-      Head Diameter: 0.300000012
-      Head Length: 0.200000003
-      Length: 0.300000012
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
       Line Style: Lines
-      Line Width: 0.0299999993
+      Line Width: 0.029999999329447746
       Name: Path
       Offset:
         X: 0
@@ -212,9 +226,10 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Radius: 0.0299999993
-      Shaft Diameter: 0.100000001
-      Shaft Length: 0.100000001
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
       Topic: /robot_4/path_unsynced
       Unreliable: false
       Value: true
@@ -223,11 +238,11 @@ Visualization Manager:
       Class: rviz/Path
       Color: 170; 170; 0
       Enabled: true
-      Head Diameter: 0.300000012
-      Head Length: 0.200000003
-      Length: 0.300000012
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
       Line Style: Lines
-      Line Width: 0.0299999993
+      Line Width: 0.029999999329447746
       Name: Path
       Offset:
         X: 0
@@ -235,9 +250,10 @@ Visualization Manager:
         Z: 0
       Pose Color: 255; 85; 255
       Pose Style: None
-      Radius: 0.0299999993
-      Shaft Diameter: 0.100000001
-      Shaft Length: 0.100000001
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
       Topic: /robot_5/path_unsynced
       Unreliable: false
       Value: true
@@ -256,41 +272,49 @@ Visualization Manager:
     - Class: rviz/FocusCamera
     - Class: rviz/Measure
     - Class: rviz/SetInitialPose
+      Theta std deviation: 0.2617993950843811
       Topic: /initialpose
+      X std deviation: 0.5
+      Y std deviation: 0.5
     - Class: rviz/SetGoal
       Topic: /move_base_simple/goal
     - Class: rviz/PublishPoint
       Single click: true
       Topic: /clicked_point
     - Class: Goal Selector
-      No. robtos: 6
+      No. robtos: 12
       Robot Goals:
         {}
       Robot Names:
         Robot 0: robot_0
         Robot 1: robot_1
+        Robot 10: robot_10
+        Robot 11: robot_11
         Robot 2: robot_2
         Robot 3: robot_3
         Robot 4: robot_4
         Robot 5: robot_5
+        Robot 6: robot_6
+        Robot 7: robot_7
+        Robot 8: robot_8
+        Robot 9: robot_9
   Value: true
   Views:
     Current:
       Angle: 0
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
-        Stereo Eye Separation: 0.0599999987
+        Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Invert Z Axis: false
       Name: Current View
-      Near Clip Distance: 0.00999999978
-      Scale: 45.9916191
+      Near Clip Distance: 0.009999999776482582
+      Scale: 56.40092086791992
       Target Frame: <Fixed Frame>
-      Value: TopDownOrtho (rviz)
-      X: 1.15270793
-      Y: -0.807881534
+      X: 1.1527079343795776
+      Y: -0.8078815340995789
     Saved: ~
 Window Geometry:
   Displays:
@@ -298,7 +322,7 @@ Window Geometry:
   Height: 836
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000016a000002bafc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000002ba000000d700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f000002b0fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d000002b0000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004b00000003efc0100000002fb0000000800540069006d00650100000000000004b00000030000fffffffb0000000800540069006d0065010000000000000450000000000000000000000340000002ba00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000016a000002a6fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000002a6000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f000002b0fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d000002b0000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004b00000003efc0100000002fb0000000800540069006d00650100000000000004b0000003bc00fffffffb0000000800540069006d0065010000000000000450000000000000000000000340000002a600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -308,5 +332,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
-  X: 305
-  Y: 25
+  X: 195
+  Y: 184
