@@ -1,0 +1,31 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/zjw/catkin_ws/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_geometry-noetic/include/**",
+        "/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_msgs-noetic/tuw_geometry_msgs/include/**",
+        "/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_multi_robot-noetic/tuw_multi_robot_ctrl/include/**",
+        "/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_multi_robot-noetic/tuw_multi_robot_goal_generator/include/**",
+        "/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_multi_robot-noetic/tuw_multi_robot_local_behavior_controller/include/**",
+        "/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_multi_robot-noetic/tuw_multi_robot_router/include/**",
+        "/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_multi_robot-noetic/tuw_multi_robot_rviz/include/**",
+        "/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_msgs-noetic/tuw_nav_msgs/include/**",
+        "/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_msgs-noetic/tuw_vehicle_msgs/include/**",
+        "/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_multi_robot-noetic/tuw_voronoi_graph/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}
