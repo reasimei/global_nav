@@ -127,7 +127,7 @@ namespace multi_robot_router
         Eigen::Vector2d temp;
 
         std::ofstream SegPos;
-        SegPos.open("/home/zhouzeyu/robotask_ws/src/tuw_multi_robot/tuw_multi_robot_router/vertices position.txt");
+        SegPos.open("/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_multi_robot-noetic/tuw_multi_robot_router/vertices position.txt");
         for(int i = 0;i < _graph.size();i++)
         {
             temp = _graph[i].getStart();
@@ -136,7 +136,7 @@ namespace multi_robot_router
         }
 
         std::ifstream goal_pos;
-        goal_pos.open("/home/zhouzeyu/robotask_ws/src/tuw_multi_robot/tuw_multi_robot_router/goal position.txt");
+        goal_pos.open("/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_multi_robot-noetic/tuw_multi_robot_router/goal position.txt");
         std::vector<Eigen::Vector2d> goals_;      //goals position
         goals_.resize(_startSegments.size());
         for(int i = 0;i < goals_.size();i++)
@@ -148,7 +148,7 @@ namespace multi_robot_router
         }
 
         std::ifstream start_pos;
-        start_pos.open("/home/zhouzeyu/robotask_ws/src/tuw_multi_robot/tuw_multi_robot_router/start position.txt");
+        start_pos.open("/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_multi_robot-noetic/tuw_multi_robot_router/start position.txt");
         std::vector<Eigen::Vector2d> start_;      //goals position
         start_.resize(_startSegments.size());
         for(int i = 0;i < start_.size();i++)
@@ -262,6 +262,7 @@ namespace multi_robot_router
             if(!srr.getRouteCandidate(_startSegments[_robot], _goalSegments[_robot], rcWrapper, robotDiameter_[_robot], _speedList[_robot], _routeCandidates[_robot], maxIterationsSingleRobot_ * (i + 1)))
             {
                 //ROS_INFO("Failed Robot");
+                std::cout << "failed to get single robot's route" << std::endl;
                 robotCollisions_[_robot] = srr.getRobotCollisions();
                 robotCollisions_[_robot].resize(nr_robots_, 0);
                 break;
@@ -272,6 +273,7 @@ namespace multi_robot_router
 
             if(!route_coordinator_->addRoute(_routeCandidates[_robot], robotDiameter_[_robot], _robot))
             {
+                std::cout << "Failed coordinator" << std::endl;
                 ROS_INFO("Failed coordinator");
                 break;
             }
@@ -281,6 +283,7 @@ namespace multi_robot_router
                 if (pair.robot1 == _robot || pair.robot2 == _robot) {
                     uint32_t other_robot = (pair.robot1 == _robot) ? pair.robot2 : pair.robot1;
                     if (!checkHoseLengthRestriction(_routeCandidates[_robot], _routeCandidates[other_robot], pair.max_hose_length)) {
+                        std::cout << "Failed Hose Length Restriction" << std::endl;
                         return false;
                     }
                 }
@@ -399,48 +402,18 @@ namespace multi_robot_router
         // std::cout << "crossing_end: " << crossing_end << std::endl;
 
         temp2 = _graph[crossing].getStart();
+        
+        // 需要根据对应map.yaml文件修改，此处仅为T-intersection地图。
+        double origin_x = -15.0;  
+        double origin_y = -15.0;  
+        double resolution = 0.05;
+        
 
-        // for(uint32_t i = 0; i < _startSegments.size(); i++)
-        // {
-        //     route_coordinator_->removeRobot(i);
-        // }
+        // 转换交叉点坐标
+        temp2(0) = temp2(0) * resolution + origin_x;  // x_物理
+        temp2(1) = temp2(1) * resolution + origin_y;  // y_物理
 
-
-        for(int i = 0;i < _graph.size();i++)
-        {
-            eq = false;
-            temp1 = _graph[i].getStart(); 
-            for(int j = i+1;j < _graph.size();j++)
-            {
-                temp2 = _graph[j].getStart();
-                for(int k = 0;k < 2;k++)
-                {
-                    if(temp1(k) == temp2(k))
-                        eq = true;
-                    else
-                    {
-                        eq = false;
-                        break;
-                    }
-                }
-                if(eq == true)
-                {
-                    crossing_end = j;
-                    break;
-                }
-            }
-            if(eq == true)
-            {
-                crossing = i;
-                break;
-            }
-        }
-        //std::cout << std::endl;
-        // std::cout << "crossing: " << crossing << std::endl;
-        // std::cout << std::endl;
-        // std::cout << "crossing_end: " << crossing_end << std::endl;
-
-        temp2 = _graph[crossing].getStart();
+        std::cout << "crossing point: ("<< temp2(0) << "," << temp2(1) << ")"<<std::endl;
         //check the distance between crossing and goal && check angle of robots
         // 计算交叉点到目标和起始点的距离，以及起始点和交叉点的角度
         for(int i = 0;i < _goalpos.size();i++)
@@ -452,11 +425,11 @@ namespace multi_robot_router
                 goal_distance[i] = sqrt(dis);
                 robot_angle[i] = angle;        
                 dis = (temp3(0)-temp2(0)) * (temp3(0)-temp2(0)) + (temp3(1)-temp2(1)) * (temp3(1)-temp2(1));
-                start_distance[i] = sqrt(dis);
+                start_distance[i] = sqrt(dis); 
             }
             std::vector<double>::iterator biggest = std::max_element(goal_distance.begin(), goal_distance.end());
             first = std::distance(goal_distance.begin(),biggest);     //firstly address
-            //std::cout << "the farest goal: " << first << std::endl << std::endl;
+            std::cout << "the farest robot to goal: " << first << std::endl << std::endl;
             //std::cout << "the angle of robots: ";
             // for(int i = 0;i < robot_angle.size();i++)
             //     std::cout << robot_angle[i] << " ";
@@ -465,6 +438,7 @@ namespace multi_robot_router
             //确定机器人相对于交叉点的位置
             for(int i = 0;i < robot_angle.size();i++)
             {
+                std::cout << "robot_angle: " << robot_angle[i] << std::endl;
                 if(abs(robot_angle[i]) < 20)
                 {
                     robot_in_crossing[i] = 0; //right
@@ -476,15 +450,27 @@ namespace multi_robot_router
                 else
                     robot_in_crossing[i] = 2; //left
             }
+            for(int i = 0;i < 3;i++)
+            {
+                for(int j = 0;j < robot_angle.size();j++)
+                {
+                    if(robot_in_crossing[j] == i)
+                    {
+                        std::cout << "crossing" << i <<":"<< j << std::endl;
+                    }
+                }
+                
+            }
             
             all_robot.clear();
             all_robot.resize(_goalpos.size());
-            // 找到同一个区域、距离起始点更近的机器人，添加到all_robot[i]，all_robot由近到远排序
+            // 找到同一个区域、起始点距离交叉点更近的机器人，添加到all_robot[i]，all_robot由近到远排序
             for(int i = 0;i < _goalpos.size();i++)      //find robots with same position in front of a robot 
             {
                 for(int j = 0;j < _goalpos.size();j++)
                 {
-                    if(i != j && std::abs(robot_angle[i] - robot_angle[j]) < 20 && start_distance[i] > start_distance[j])
+                    // if(i != j && std::abs(robot_angle[i] - robot_angle[j]) < 20 && start_distance[i] > start_distance[j])
+                    if(i != j && robot_in_crossing[i]==robot_in_crossing[j] && start_distance[i] > start_distance[j])
                         all_robot[i].push_back(j);
                 }
 

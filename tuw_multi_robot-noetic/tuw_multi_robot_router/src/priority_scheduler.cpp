@@ -161,7 +161,7 @@ bool PriorityScheduler::reschedulePriorities(const uint32_t _collidingRobot, std
                         if (new_order[i] != schedule[i])
                         {
                             neq = true;
-                            std::cout << "k= " << k << std::endl;
+                            // std::cout << "k= " << k << std::endl;
                             break;
                         }
                     }
