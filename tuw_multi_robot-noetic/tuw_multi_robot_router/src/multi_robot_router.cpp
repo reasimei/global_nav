@@ -127,7 +127,7 @@ namespace multi_robot_router
         Eigen::Vector2d temp;
 
         std::ofstream SegPos;
-        SegPos.open("/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_multi_robot-noetic/tuw_multi_robot_router/vertices position.txt");
+        SegPos.open("/home/zjw/catkin_ws/src/global_nav/tuw_multi_robot-noetic/tuw_multi_robot_router/vertices position.txt");
         for(int i = 0;i < _graph.size();i++)
         {
             temp = _graph[i].getStart();
@@ -136,7 +136,7 @@ namespace multi_robot_router
         }
 
         std::ifstream goal_pos;
-        goal_pos.open("/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_multi_robot-noetic/tuw_multi_robot_router/goal position.txt");
+        goal_pos.open("/home/zjw/catkin_ws/src/global_nav/tuw_multi_robot-noetic/tuw_multi_robot_router/goal position.txt");
         std::vector<Eigen::Vector2d> goals_;      //goals position
         goals_.resize(_startSegments.size());
         for(int i = 0;i < goals_.size();i++)
@@ -148,7 +148,7 @@ namespace multi_robot_router
         }
 
         std::ifstream start_pos;
-        start_pos.open("/home/zjw/catkin_ws/src/tuw_multi_robot_xin/tuw_multi_robot-noetic/tuw_multi_robot_router/start position.txt");
+        start_pos.open("/home/zjw/catkin_ws/src/global_nav/tuw_multi_robot-noetic/tuw_multi_robot_router/start position.txt");
         std::vector<Eigen::Vector2d> start_;      //goals position
         start_.resize(_startSegments.size());
         for(int i = 0;i < start_.size();i++)
@@ -156,7 +156,9 @@ namespace multi_robot_router
             for(int j = 0;j < 2;j++)
             {    
                 start_pos >> start_[i](j);
+                // std::cout << start_[i](j) << " ";
             }
+            std::cout << std::endl;
         }
         
         std::cout << std::endl <<"_startSegments: ";
@@ -327,6 +329,7 @@ namespace multi_robot_router
     const std::vector<float> &_speedList)
     {    
         // std::vector<uint32_t> all_try_robot;
+        all_try_robot.clear();
         Eigen::Vector2d temp1;
         Eigen::Vector2d temp2;
         Eigen::Vector2d temp3;        
@@ -354,7 +357,7 @@ namespace multi_robot_router
         bool get_route = false;
         uint32_t add;
         uint32_t find;
-
+        bool overall_success = true;
         std::cout << "=========================================" << std::endl;
         std::cout << "robot in goal: ";
         for(int i = 0;i < all_try_robot.size();i++)
@@ -420,8 +423,10 @@ namespace multi_robot_router
             {
                 temp1 = _goalpos[i];
                 temp3 = _startpos[i];
+                // std::cout << "start: ("<< temp3(0) << "," << temp3(1) << ")"<<std::endl;
                 dis = (temp1(0)-temp2(0)) * (temp1(0)-temp2(0)) + (temp1(1)-temp2(1)) * (temp1(1)-temp2(1));
                 angle = atan2((temp3(1)-temp2(1)),(temp3(0)-temp2(0))) * 180/PI;
+                // std::cout << "angle: "<< angle <<std::endl;
                 goal_distance[i] = sqrt(dis);
                 robot_angle[i] = angle;        
                 dis = (temp3(0)-temp2(0)) * (temp3(0)-temp2(0)) + (temp3(1)-temp2(1)) * (temp3(1)-temp2(1));
@@ -527,6 +532,7 @@ namespace multi_robot_router
             }
             std::cout << std::endl;
             std::cout << "first: " << first << std::endl;
+            ROS_INFO("PlanPaths_push (Phase 1): Planning for 'first' robot %u and pushing others.", first);
 
             all_try_robot.push_back(first);            
             
@@ -761,26 +767,31 @@ namespace multi_robot_router
             robotCollisions_[get].resize(nr_robots_, 0);
 
             get_route = route_coordinator_->addRoute(temp_candidate[get], robotDiameter_[get], get);
-
+            
+            ROS_INFO("PlanPaths_push (Phase 2): Planning remaining robots to their final goals.");
+            
             std::vector<uint32_t> left_robot;    //get remain robots
             for(int i = 0;i < _startSegments.size();i++)
             {
-                left_robot.push_back(i);
+                left_robot.push_back(i); // all robots
             }
             std::vector<uint32_t>::iterator iter;
             for(int i = 0;i < robot_in_goal_position.size();i++)
             {
                 iter = std::find(left_robot.begin(), left_robot.end(), robot_in_goal_position[i]);
-                left_robot.erase(iter);
+                left_robot.erase(iter); // erase goal robot 
             }
             for(int i = 0;i < robot_in_start_position.size();i++)
             {
                 iter = std::find(left_robot.begin(), left_robot.end(), robot_in_start_position[i]);
-                left_robot.erase(iter);
+                left_robot.erase(iter); // erase start robot ???
             }
             iter = std::find(left_robot.begin(), left_robot.end(),first);
-            left_robot.erase(iter);
-
+            left_robot.erase(iter); // erase first robot 
+            for(int i = 0;i < left_robot.size();i++)
+            {
+                std::cout << "left robot: " << left_robot[i] << std::endl;
+            }
             std::vector<uint32_t> robot_in_other;
             std::vector<uint32_t> robot_in_other_position;
             for(int i = 0;i < _goalSegments.size();i++)     //robot in crossing to go, distance from crossing center to themselves
@@ -818,7 +829,7 @@ namespace multi_robot_router
                 {
                     RouteCoordinatorWrapper rcWrapper(get, *route_coordinator_);
 
-                    get_route = srr.getRouteCandidate(_startSegments[get], _startSegments[get], rcWrapper, \
+                    get_route = srr.getRouteCandidate(_startSegments[get], _goalSegments[get], rcWrapper, \
                     robotDiameter_[get], _speedList[get], temp_candidate[get], maxIterationsSingleRobot_ * (i + add + 1 + 1));
 
                     robotCollisions_[get] = srr.getRobotCollisions();
@@ -827,6 +838,29 @@ namespace multi_robot_router
                     get_route = route_coordinator_->addRoute(temp_candidate[get], robotDiameter_[get], get);
 
                 }
+                // RouteCoordinatorWrapper rcWrapper(get, *route_coordinator_);
+
+                // get_route = srr.getRouteCandidate(_startSegments[get], _goalSegments[get], rcWrapper, \
+                // robotDiameter_[get], _speedList[get], temp_candidate[get], maxIterationsSingleRobot_ * (i + add + 1 + 1));
+
+                // robotCollisions_[get] = srr.getRobotCollisions();
+                // robotCollisions_[get].resize(nr_robots_, 0);
+
+                // if (get_route) {
+                //     if (!route_coordinator_->addRoute(temp_candidate[get], robotDiameter_[get], get)) {
+                //         ROS_WARN("PlanPaths_push (Phase 2): Failed to add route to coordinator for robot %u.", get);
+                //         overall_success = false;
+                //         temp_candidate[get].clear(); // 规划失败，清除路径
+                //     } else {
+                //          ROS_INFO("PlanPaths_push (Phase 2): Robot %u planned to goal %u.", get, _goalSegments[get]);
+                //     }
+                // } else {
+                //     ROS_WARN("PlanPaths_push (Phase 2): Failed to find path for robot %u from %u to %u.", get, _startSegments[get], _goalSegments[get]);
+                //     overall_success = false;
+                //     temp_candidate[get].clear(); // 规划失败，清除路径
+                // }
+                // get_route = route_coordinator_->addRoute(temp_candidate[get], robotDiameter_[get], get);
+
             }
 
             for(int i = 0;i < robot_in_other_position.size();i++)   //robot in where we want to go
@@ -861,7 +895,7 @@ namespace multi_robot_router
                     {
                         RouteCoordinatorWrapper rcWrapper(get, *route_coordinator_);
 
-                        get_route = srr.getRouteCandidate(_startSegments[get], _startSegments[get], rcWrapper, \
+                        get_route = srr.getRouteCandidate(_startSegments[get], _goalSegments[get], rcWrapper, \
                         robotDiameter_[get], _speedList[get], temp_candidate[get], maxIterationsSingleRobot_ * (add + 3 + i));
 
                         robotCollisions_[get] = srr.getRobotCollisions();
@@ -892,7 +926,7 @@ namespace multi_robot_router
                     {
                         RouteCoordinatorWrapper rcWrapper(get, *route_coordinator_);
 
-                        get_route = srr.getRouteCandidate(_startSegments[get], _startSegments[get], rcWrapper, \
+                        get_route = srr.getRouteCandidate(_startSegments[get], _goalSegments[get], rcWrapper, \
                         robotDiameter_[get], _speedList[get], temp_candidate[get], maxIterationsSingleRobot_ * (add + 3 + i));
 
                         robotCollisions_[get] = srr.getRobotCollisions();
@@ -903,12 +937,20 @@ namespace multi_robot_router
                     }
                 }
             }
-
+            // if(overall_success)
+            // {
+            //     for(int i = 0;i < temp_candidate.size();i++)
+            //     {
+            //         for(int j = 0;j < temp_candidate[i].size();j++)
+            //             _routeCandidates[i].emplace_back(temp_candidate[i][j]);
+            //     }
+            // }
             for(int i = 0;i < temp_candidate.size();i++)
             {
                 for(int j = 0;j < temp_candidate[i].size();j++)
                     _routeCandidates[i].emplace_back(temp_candidate[i][j]);
             }
+
 
         return get_route;
     }
