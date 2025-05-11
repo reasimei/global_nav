@@ -159,7 +159,7 @@ namespace tuw_graph
         segments_ = calcSegments(m, distField_, voronoiMap_, potential.get(), pixel_path_length, crossingOptimization_ / resolution_, endSegmentOptimization_ / resolution_);
 
         //Check Directroy
-        save(graphCachePath_ + std::to_string(_map_hash) + "/", segments_, origin_, resolution_, map_);
+        // save(graphCachePath_ + std::to_string(_map_hash) + "/", segments_, origin_, resolution_, map_);
         ROS_INFO("Graph generator: Created new Graph %lu", _map_hash);
     }
 

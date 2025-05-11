@@ -347,6 +347,7 @@ namespace multi_robot_router
         std::vector<double> temp;
         std::vector<uint32_t> robot_in_crossing(_goalpos.size());
         std::vector<std::vector<RouteVertex>> temp_candidate(_goalpos.size());
+        std::vector<RouteVertex> path_segment_to_final_goal;
         uint32_t first;
         uint32_t first_robot_pos;
         uint32_t first_goal_pos;
@@ -686,7 +687,7 @@ namespace multi_robot_router
             }
             if(cross_go == 1) 
             {    
-                //挡住启动机器人的机器人
+                //移动挡住启动机器人的机器人
                 for(int i = 0;i < robot_in_start_position.size();i++)     //for robot in front of start robot
                 {
                     get = robot_in_start_position[i];
@@ -702,7 +703,7 @@ namespace multi_robot_router
                     get_route = route_coordinator_->addRoute(temp_candidate[get], robotDiameter_[get], get);
 
                 }
-                //挡住目标点的机器人
+                //移动挡住目标点的机器人
                 for(int i = 0;i < robot_in_goal_position.size();i++)    //for robot has the same place with goal
                 {
                     get = robot_in_goal_position[i];
@@ -768,8 +769,17 @@ namespace multi_robot_router
 
             get_route = route_coordinator_->addRoute(temp_candidate[get], robotDiameter_[get], get);
             
-            ROS_INFO("PlanPaths_push (Phase 2): Planning remaining robots to their final goals.");
-            
+            if(get_route)
+            {
+                ROS_INFO("PlanPaths_push (Phase 2): first robot %u from %u to %u.Planning remaining robots to their final goals.", get, _startSegments[get], _goalSegments[get]);
+            }
+            else
+            {
+                ROS_WARN("Failed to find path for first robot %u from %u to %u.", get, _startSegments[get], _goalSegments[get]);
+                overall_success = false;
+                temp_candidate[get].clear(); // 规划失败，清除路径
+            }
+
             std::vector<uint32_t> left_robot;    //get remain robots
             for(int i = 0;i < _startSegments.size();i++)
             {
@@ -781,21 +791,131 @@ namespace multi_robot_router
                 iter = std::find(left_robot.begin(), left_robot.end(), robot_in_goal_position[i]);
                 left_robot.erase(iter); // erase goal robot 
             }
-            for(int i = 0;i < robot_in_start_position.size();i++)
-            {
-                iter = std::find(left_robot.begin(), left_robot.end(), robot_in_start_position[i]);
-                left_robot.erase(iter); // erase start robot ???
-            }
+            // for(int i = 0;i < robot_in_start_position.size();i++)
+            // {
+            //     iter = std::find(left_robot.begin(), left_robot.end(), robot_in_start_position[i]);
+            //     left_robot.erase(iter); // erase start robot ???
+            // }
             iter = std::find(left_robot.begin(), left_robot.end(),first);
             left_robot.erase(iter); // erase first robot 
+
+            
+            bool p2_segment_planned_ok = false;
+            bool robot_had_phase1_path = false;
+            uint32_t phase2_start_segment_id;
+            route_coordinator_->removeRobot(first); // 移除第一机器人，因为其路径已完成规划。
+                
             for(int i = 0;i < left_robot.size();i++)
             {
+                get = left_robot[i];
+
+                path_segment_to_final_goal.clear();
+                robot_had_phase1_path = !temp_candidate[get].empty(); // 检查 Phase 1 是否为该机器人生成了路径
+                
+                if (robot_had_phase1_path) {
+                    phase2_start_segment_id = temp_candidate[get].back().getSegment().getSegmentId();
+                    ROS_INFO("Phase 1 had path for robot %u. Starting Phase 2 from segment ID: %u\n", get, phase2_start_segment_id);
+                } else {
+                    // Phase 1 没有为此机器人规划路径 (例如，它是一个 "left_robot" 且最初决定让它原地等待)
+                    // 则从其原始起点开始 Phase 2 的规划。
+                    ROS_INFO("Phase 1 did not have path for robot %u. Starting Phase 2 from original start segment ID: %u\n", get, _startSegments[get]);
+                    phase2_start_segment_id = _startSegments[get];
+                    // temp_candidate[get] 此时应为空，如果之前有内容但逻辑上是“原地”，也应清空以接收新路径。
+                    temp_candidate[get].clear();
+                }
+
+                
+                // 在为 get 规划新路段前，如果它在 Phase 1 有路径，则先从协调器中移除该（临时）路径。
+                // 这是为了避免新路段的规划受到它自己旧路径的“占用”干扰。
+                if (robot_had_phase1_path) {
+                    route_coordinator_->removeRobot(get);
+                }
+
+            }
+            for(int i = left_robot.size()-1;i >=0;i--)
+            {
                 std::cout << "left robot: " << left_robot[i] << std::endl;
+                get = left_robot[i];
+                path_segment_to_final_goal.clear();
+                // RouteCoordinatorWrapper rcWrapper_p2(get, *route_coordinator_);
+                p2_segment_planned_ok = srr.getRouteCandidate(
+                    phase2_start_segment_id,    // 从 Phase 1 的终点（或原始起点）开始
+                    _goalSegments[get],       // 到最终目标
+                    rcWrapper,
+                    robotDiameter_[get],
+                    _speedList[get],
+                    path_segment_to_final_goal, // 路径段输出到此临时vector
+                    maxIterationsSingleRobot_ * (add+10+i)
+                );
+                robotCollisions_[get] = srr.getRobotCollisions();
+                robotCollisions_[get].resize(nr_robots_, 0);
+
+                // 路径加入协调器
+                if (p2_segment_planned_ok) {
+                    ROS_INFO("find path"); //找到路径
+                    if (!path_segment_to_final_goal.empty()) {
+                        if (!route_coordinator_->addRoute(path_segment_to_final_goal, robotDiameter_[get], get)) {
+                            ROS_WARN("PlanPaths_push (Phase 2): Failed to add COMPLETE route to coordinator for robot %u.", get);
+                            overall_success = false;
+                            path_segment_to_final_goal.clear(); // 添加失败，路径无效
+                        } else { //路径协调成功，拼接路径
+                            if (robot_had_phase1_path) {
+                                // 将新路段拼接到 Phase 1 的路径后面
+                                if (!path_segment_to_final_goal.empty()) {
+                                    int start_index_for_appending = 0;
+                                    // 为避免重复节点，如果新路径段的第一个节点与Phase 1路径的最后一个节点相同，则跳过它
+                                    if (temp_candidate[get].back().getSegment().getSegmentId() == path_segment_to_final_goal.front().getSegment().getSegmentId()) {
+                                        start_index_for_appending = 1;
+                                        // temp_candidate[get].insert(temp_candidate[get].end(), path_segment_to_final_goal.begin() + 1, path_segment_to_final_goal.end());
+                                    } 
+                                    else {
+                                        // 如果不相同（通常不应该发生，除非路径断开），直接拼接。需要注意这种情况！
+                                        ROS_WARN("PlanPaths_push (Phase 2): Path segment for robot %u from %u to %u did not start where Phase 1 ended. Appending directly.",
+                                                get, phase2_start_segment_id, _goalSegments[get]);
+                                        
+                                        // temp_candidate[get].insert(temp_candidate[get].end(), path_segment_to_final_goal.begin(), path_segment_to_final_goal.end());
+                                    }
+                                    for (int k = start_index_for_appending; k < path_segment_to_final_goal.size(); k++) {
+                                        temp_candidate[get].emplace_back(path_segment_to_final_goal[k]); // 调用拷贝构造函数
+                                    }
+                                }
+                                // else: path_segment_to_final_goal 为空，意味着 phase2_start_segment_id 已经是目标，这已被前面的if捕获。
+                            } 
+                            else {
+                                // Phase 1 没有为此机器人规划路径，所以 Phase 2 规划的路径段就是它的完整路径
+                                for (const auto& vertex : path_segment_to_final_goal) {
+                                    temp_candidate[get].emplace_back(vertex);
+                                }
+                                // temp_candidate[get].assign(path_segment_to_final_goal.begin(), path_segment_to_final_goal.end());
+                            }
+        
+                            for (int i=0;i< temp_candidate[get].size();i++) {
+                                std::cout<< temp_candidate[get][i].getSegment().getSegmentId() << ' ';
+                            }
+                            std::cout << std::endl; 
+                            ROS_INFO("PlanPaths_push (Phase 2): Robot %u's complete path to goal %u added to coordinator.", get, _goalSegments[get]);
+                        }
+                    }
+                    
+                } else { // p2_segment_planned_ok is false
+                    ROS_WARN("PlanPaths_push (Phase 2): Failed to find path segment for robot %u from %u to final goal %u.", get, phase2_start_segment_id, _goalSegments[get]);
+                    for (uint32_t j = 0; j < robotCollisions_[get].size(); ++j) {
+                        if (robotCollisions_[get][j] > 0) { // 假设大于0表示有碰撞
+                            ROS_WARN("collisions between Robot %u and %u.", get, j);
+                        }
+                    }
+                    overall_success = false;
+                    // 规划失败，该机器人无法到达最终目标。
+                    // temp_candidate[get] 此时应被清空，表示没有有效的完整路径。
+                    // 它在协调器中也没有路径了（因为之前移除了 Phase 1 的路径）。
+                    temp_candidate[get].clear();
+                }
             }
             std::vector<uint32_t> robot_in_other;
             std::vector<uint32_t> robot_in_other_position;
             for(int i = 0;i < _goalSegments.size();i++)     //robot in crossing to go, distance from crossing center to themselves
             {
+                std::cout << "robot in crossing: " << robot_in_crossing[i] << std::endl;
                 if(robot_in_crossing[i] == cross_go)
                 {
                     robot_in_other.push_back(i);
@@ -822,46 +942,46 @@ namespace multi_robot_router
             //     std::cout << robot_in_crossing[robot_in_other_position[i]] << " ";
             // std::cout << std::endl << std::endl;
 
-            for(int i = 0;i < left_robot.size();i++)         //for remain robots behind the start robot
-            {
-                get = left_robot[i];
-                if(robot_in_crossing[get] != cross_go)            
-                {
-                    RouteCoordinatorWrapper rcWrapper(get, *route_coordinator_);
+            // for(int i = 0;i < left_robot.size();i++)         //for remain robots behind the start robot
+            // {
+            //     get = left_robot[i];
+            //     // if(robot_in_crossing[get] != cross_go)            
+            //     // {
+            //     //     RouteCoordinatorWrapper rcWrapper(get, *route_coordinator_);
 
-                    get_route = srr.getRouteCandidate(_startSegments[get], _goalSegments[get], rcWrapper, \
-                    robotDiameter_[get], _speedList[get], temp_candidate[get], maxIterationsSingleRobot_ * (i + add + 1 + 1));
+            //     //     get_route = srr.getRouteCandidate(_startSegments[get], _goalSegments[get], rcWrapper, \
+            //     //     robotDiameter_[get], _speedList[get], temp_candidate[get], maxIterationsSingleRobot_ * (i + add + 1 + 1));
 
-                    robotCollisions_[get] = srr.getRobotCollisions();
-                    robotCollisions_[get].resize(nr_robots_, 0);
+            //     //     robotCollisions_[get] = srr.getRobotCollisions();
+            //     //     robotCollisions_[get].resize(nr_robots_, 0);
                 
-                    get_route = route_coordinator_->addRoute(temp_candidate[get], robotDiameter_[get], get);
+            //     //     get_route = route_coordinator_->addRoute(temp_candidate[get], robotDiameter_[get], get);
 
-                }
-                // RouteCoordinatorWrapper rcWrapper(get, *route_coordinator_);
+            //     // }
+            //     RouteCoordinatorWrapper rcWrapper(get, *route_coordinator_);
 
-                // get_route = srr.getRouteCandidate(_startSegments[get], _goalSegments[get], rcWrapper, \
-                // robotDiameter_[get], _speedList[get], temp_candidate[get], maxIterationsSingleRobot_ * (i + add + 1 + 1));
+            //     get_route = srr.getRouteCandidate(_startSegments[get], _goalSegments[get], rcWrapper, \
+            //     robotDiameter_[get], _speedList[get], temp_candidate[get], maxIterationsSingleRobot_ * (i + add + 1 + 1));
 
-                // robotCollisions_[get] = srr.getRobotCollisions();
-                // robotCollisions_[get].resize(nr_robots_, 0);
+            //     robotCollisions_[get] = srr.getRobotCollisions();
+            //     robotCollisions_[get].resize(nr_robots_, 0);
 
-                // if (get_route) {
-                //     if (!route_coordinator_->addRoute(temp_candidate[get], robotDiameter_[get], get)) {
-                //         ROS_WARN("PlanPaths_push (Phase 2): Failed to add route to coordinator for robot %u.", get);
-                //         overall_success = false;
-                //         temp_candidate[get].clear(); // 规划失败，清除路径
-                //     } else {
-                //          ROS_INFO("PlanPaths_push (Phase 2): Robot %u planned to goal %u.", get, _goalSegments[get]);
-                //     }
-                // } else {
-                //     ROS_WARN("PlanPaths_push (Phase 2): Failed to find path for robot %u from %u to %u.", get, _startSegments[get], _goalSegments[get]);
-                //     overall_success = false;
-                //     temp_candidate[get].clear(); // 规划失败，清除路径
-                // }
-                // get_route = route_coordinator_->addRoute(temp_candidate[get], robotDiameter_[get], get);
+            //     if (get_route) {
+            //         if (!route_coordinator_->addRoute(temp_candidate[get], robotDiameter_[get], get)) {
+            //             ROS_WARN("PlanPaths_push (Phase 2): Failed to add route to coordinator for robot %u.", get);
+            //             overall_success = false;
+            //             temp_candidate[get].clear(); // 规划失败，清除路径
+            //         } else {
+            //                 ROS_INFO("PlanPaths_push (Phase 2): Robot %u planned to goal %u.", get, _goalSegments[get]);
+            //         }
+            //     } else {
+            //         ROS_WARN("PlanPaths_push (Phase 2): Failed to find path for robot %u from %u to %u.", get, _startSegments[get], _goalSegments[get]);
+            //         overall_success = false;
+            //         temp_candidate[get].clear(); // 规划失败，清除路径
+            //     }
+            //     get_route = route_coordinator_->addRoute(temp_candidate[get], robotDiameter_[get], get);
 
-            }
+            // }
 
             for(int i = 0;i < robot_in_other_position.size();i++)   //robot in where we want to go
             {
@@ -937,22 +1057,22 @@ namespace multi_robot_router
                     }
                 }
             }
-            // if(overall_success)
-            // {
-            //     for(int i = 0;i < temp_candidate.size();i++)
-            //     {
-            //         for(int j = 0;j < temp_candidate[i].size();j++)
-            //             _routeCandidates[i].emplace_back(temp_candidate[i][j]);
-            //     }
-            // }
+        if(overall_success)
+        {
             for(int i = 0;i < temp_candidate.size();i++)
             {
                 for(int j = 0;j < temp_candidate[i].size();j++)
                     _routeCandidates[i].emplace_back(temp_candidate[i][j]);
             }
+        }
+        // for(int i = 0;i < temp_candidate.size();i++)
+        // {
+        //     for(int j = 0;j < temp_candidate[i].size();j++)
+        //         _routeCandidates[i].emplace_back(temp_candidate[i][j]);
+        // }
 
 
-        return get_route;
+        return overall_success;
     }
 
     void MultiRobotRouter::setPriorityRescheduling(const bool _status)
