@@ -694,7 +694,7 @@ namespace multi_robot_router
                     RouteCoordinatorWrapper rcWrapper(get, *route_coordinator_);
 
                     get_route = srr.getRouteCandidate(_startSegments[get], \
-                    crossing_segment[cross_go][crossing_segment[cross_go].size() - 1 - add + i].getSegmentId(), rcWrapper, \
+                    crossing_segment[cross_go][crossing_segment[cross_go].size() - 2 - add + i*2].getSegmentId(), rcWrapper, \
                     robotDiameter_[get],  _speedList[get], temp_candidate[get], maxIterationsSingleRobot_ * (i + 1));
 
                     robotCollisions_[get] = srr.getRobotCollisions();
@@ -772,6 +772,9 @@ namespace multi_robot_router
             if(get_route)
             {
                 ROS_INFO("PlanPaths_push (Phase 2): first robot %u from %u to %u.Planning remaining robots to their final goals.", get, _startSegments[get], _goalSegments[get]);
+                for (int i=0;i< temp_candidate[get].size();i++) {
+                    std::cout<< temp_candidate[get][i].getSegment().getSegmentId() << ' ';
+                }
             }
             else
             {
@@ -779,7 +782,20 @@ namespace multi_robot_router
                 overall_success = false;
                 temp_candidate[get].clear(); // 规划失败，清除路径
             }
-
+            // 第一个机器人到终点，其他机器人等待
+            int length = temp_candidate[get].size();// 计算第一机器人路径的时间步
+            // RouteVertex last_position;
+            int length_now;
+            for(int i = 0;i < robot_in_start_position.size();i++) 
+            {
+                get = robot_in_start_position[i];
+                // last_position = temp_candidate[get].back();
+                length_now = temp_candidate[get].size();
+                for(int j = 0;j < length - length_now;j++)
+                {
+                    temp_candidate[get].emplace_back(temp_candidate[get].back());
+                }
+            }
             std::vector<uint32_t> left_robot;    //get remain robots
             for(int i = 0;i < _startSegments.size();i++)
             {
@@ -808,8 +824,20 @@ namespace multi_robot_router
             for(int i = 0;i < left_robot.size();i++)
             {
                 get = left_robot[i];
+                // 在为 get 规划新路段前，如果它在 Phase 1 有路径，则先从协调器中移除该（临时）路径。
+                // 这是为了避免新路段的规划受到它自己旧路径的“占用”干扰。
+                if (robot_had_phase1_path) {
+                    route_coordinator_->removeRobot(get);
+                }
 
+            }
+            
+            for(int i = left_robot.size()-1;i >=0;i--)
+            {
+                std::cout << "left robot: " << left_robot[i] << std::endl;
+                get = left_robot[i];
                 path_segment_to_final_goal.clear();
+
                 robot_had_phase1_path = !temp_candidate[get].empty(); // 检查 Phase 1 是否为该机器人生成了路径
                 
                 if (robot_had_phase1_path) {
@@ -823,25 +851,13 @@ namespace multi_robot_router
                     // temp_candidate[get] 此时应为空，如果之前有内容但逻辑上是“原地”，也应清空以接收新路径。
                     temp_candidate[get].clear();
                 }
-
-                
-                // 在为 get 规划新路段前，如果它在 Phase 1 有路径，则先从协调器中移除该（临时）路径。
-                // 这是为了避免新路段的规划受到它自己旧路径的“占用”干扰。
-                if (robot_had_phase1_path) {
-                    route_coordinator_->removeRobot(get);
-                }
-
-            }
-            for(int i = left_robot.size()-1;i >=0;i--)
-            {
-                std::cout << "left robot: " << left_robot[i] << std::endl;
-                get = left_robot[i];
                 path_segment_to_final_goal.clear();
-                // RouteCoordinatorWrapper rcWrapper_p2(get, *route_coordinator_);
+                
+                RouteCoordinatorWrapper rcWrapper_p2(get, *route_coordinator_);
                 p2_segment_planned_ok = srr.getRouteCandidate(
                     phase2_start_segment_id,    // 从 Phase 1 的终点（或原始起点）开始
                     _goalSegments[get],       // 到最终目标
-                    rcWrapper,
+                    rcWrapper_p2,
                     robotDiameter_[get],
                     _speedList[get],
                     path_segment_to_final_goal, // 路径段输出到此临时vector
@@ -903,6 +919,9 @@ namespace multi_robot_router
                         if (robotCollisions_[get][j] > 0) { // 假设大于0表示有碰撞
                             ROS_WARN("collisions between Robot %u and %u.", get, j);
                         }
+                    }
+                    for (int i=0;i< temp_candidate[get].size();i++) {
+                        std::cout<< temp_candidate[get][i].getSegment().getSegmentId() << ' ';
                     }
                     overall_success = false;
                     // 规划失败，该机器人无法到达最终目标。
